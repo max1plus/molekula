@@ -32,7 +32,7 @@ export function AttendanceView() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <div className="flex justify-center">
+      <div className="flex justify-center overflow-x-auto">
         <Calendar
           mode="single"
           selected={date}
