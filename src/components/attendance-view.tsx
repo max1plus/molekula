@@ -25,14 +25,10 @@ export function AttendanceView() {
   useEffect(() => {
     // This runs only in the browser, after the component has mounted.
     setHasMounted(true);
+    // Set initial date only on the client to avoid hydration mismatch
+    const today = new Date();
+    setDate(today);
   }, []);
-
-  useEffect(() => {
-    if (hasMounted) {
-      const today = new Date();
-      setDate(today);
-    }
-  }, [hasMounted]);
 
   useEffect(() => {
     if (date) {
@@ -48,9 +44,9 @@ export function AttendanceView() {
   if (!hasMounted) {
     return (
       <div className="grid gap-6">
-        <div className="flex justify-center">
-          <div className="p-3 rounded-md border w-min">
-            <Skeleton className="h-[290px] w-[320px]" />
+        <div className="mx-auto w-min">
+          <div className="rounded-md border">
+            <Skeleton className="h-[290px] w-[320px] p-3" />
           </div>
         </div>
         <div className="rounded-lg border bg-card">
@@ -82,7 +78,7 @@ export function AttendanceView() {
 
   return (
     <div className="grid gap-6">
-      <div className="flex justify-center">
+      <div className="mx-auto w-min">
         <Calendar
           mode="single"
           selected={date}
