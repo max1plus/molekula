@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useState, useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { processScan } from '@/lib/actions';
 import type { Guest } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -30,40 +30,51 @@ function SubmitButton() {
   );
 }
 
+const initialState: {
+  success: boolean;
+  error: string | null;
+  guest: Guest | null;
+} = { success: false, error: null, guest: null };
+
 export function ScannerUI() {
-  const [state, formAction] = useFormState(processScan, { success: false });
+  const [state, formAction] = useActionState(processScan, initialState);
   const [scannedGuest, setScannedGuest] = useState<Guest | null>(null);
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const { toast } = useToast();
-  const [key, setKey] = useState(Date.now()); // to reset form
+  const [formKey, setFormKey] = useState(Date.now());
 
-  const handleFormAction = async (formData: FormData) => {
-    const result = await processScan(undefined, formData.get('guestId') as string);
-    setScannedGuest(result.guest || null);
-    
-    if (result.success) {
+  useEffect(() => {
+    // Only run side-effects when an action has been completed.
+    if (!state.error && !state.success) {
+      setScannedGuest(null);
+      return;
+    }
+
+    setScannedGuest(state.guest || null);
+
+    if (state.success) {
       toast({
         title: 'Доступ разрешен',
-        description: `Гость ${result.guest?.full_name} успешно прошел проверку.`,
+        description: `Гость ${state.guest?.full_name} успешно прошел проверку.`,
         className: 'bg-green-600 border-green-500 text-white',
       });
-    } else {
-      if (result.error === 'Guest is blacklisted') {
+      setFormKey(Date.now());
+    } else if (state.error) {
+      if (state.error === 'Guest is blacklisted') {
         setIsAlertOpen(true);
       } else {
         toast({
           variant: 'destructive',
           title: 'Ошибка',
-          description: result.error === 'Guest not found' ? 'Гость не найден.' : 'Гость уже прошел сегодня.',
+          description:
+            state.error === 'Guest not found'
+              ? 'Гость не найден.'
+              : 'Гость уже прошел сегодня.',
         });
+        setFormKey(Date.now());
       }
     }
-    // Reset the form input
-    const form = document.getElementById('scan-form') as HTMLFormElement;
-    form?.reset();
-    setKey(Date.now());
-  };
-
+  }, [state, toast]);
 
   return (
     <Card className="w-full max-w-md">
@@ -73,7 +84,7 @@ export function ScannerUI() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <form id="scan-form" action={handleFormAction} className="space-y-4" key={key}>
+        <form action={formAction} className="space-y-4" key={formKey}>
           <Input
             name="guestId"
             placeholder="Введите ID гостя (e.g., qr-guest-1)"
@@ -88,25 +99,31 @@ export function ScannerUI() {
             <CardContent className="pt-6">
               <div className="flex flex-col items-center gap-4 text-center">
                 <Avatar className="h-24 w-24 border-4 border-muted">
-                  <AvatarImage src={scannedGuest.photo} alt={scannedGuest.full_name} data-ai-hint="person portrait" />
+                  <AvatarImage
+                    src={scannedGuest.photo}
+                    alt={scannedGuest.full_name}
+                    data-ai-hint="person portrait"
+                  />
                   <AvatarFallback>
                     <User className="h-10 w-10" />
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="text-xl font-bold">{scannedGuest.full_name}</h3>
+                  <h3 className="text-xl font-bold">
+                    {scannedGuest.full_name}
+                  </h3>
                   <p className="text-muted-foreground">{scannedGuest.phone}</p>
                 </div>
-                 {state.success ? (
-                    <Badge className="bg-green-600 hover:bg-green-500 text-white">
-                        <CheckCircle className="mr-2 h-4 w-4" />
-                        Доступ разрешен
-                    </Badge>
+                {state.success ? (
+                  <Badge className="bg-green-600 hover:bg-green-500 text-white">
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Доступ разрешен
+                  </Badge>
                 ) : (
-                    <Badge variant="destructive">
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Доступ запрещен
-                    </Badge>
+                  <Badge variant="destructive">
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Доступ запрещен
+                  </Badge>
                 )}
               </div>
             </CardContent>
@@ -115,7 +132,10 @@ export function ScannerUI() {
 
         <BlacklistAlert
           isOpen={isAlertOpen}
-          onClose={() => setIsAlertOpen(false)}
+          onClose={() => {
+            setIsAlertOpen(false);
+            setFormKey(Date.now());
+          }}
           guestName={scannedGuest?.full_name || 'Гость'}
         />
       </CardContent>

@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useFormState } from 'react-dom';
+import { useEffect, useActionState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -47,7 +46,7 @@ type GuestFormProps = {
 };
 
 export function GuestForm({ guest, onFinished }: GuestFormProps) {
-  const [state, formAction] = useFormState(saveGuest, { message: '' });
+  const [state, formAction] = useActionState(saveGuest, { message: '' });
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof GuestFormSchema>>({

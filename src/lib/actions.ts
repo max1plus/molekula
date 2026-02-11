@@ -27,13 +27,14 @@ export async function getGuests(): Promise<Guest[]> {
   return guests;
 }
 
-export async function processScan(guestId: string) {
+export async function processScan(prevState: any, formData: FormData) {
   'use server';
+  const guestId = formData.get('guestId') as string;
   await new Promise((resolve) => setTimeout(resolve, 500));
   const guest = guests.find((g) => g.id === guestId);
 
   if (!guest) {
-    return { success: false, error: 'Guest not found' };
+    return { success: false, error: 'Guest not found', guest: null };
   }
 
   if (guest.is_blacklisted) {
@@ -61,7 +62,7 @@ export async function processScan(guestId: string) {
   });
 
   revalidatePath('/scanner');
-  return { success: true, guest };
+  return { success: true, guest, error: null };
 }
 
 export async function saveGuest(prevState: any, formData: FormData) {
