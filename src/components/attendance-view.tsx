@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
+import { ru } from 'date-fns/locale';
 
 export function AttendanceView() {
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -31,12 +32,13 @@ export function AttendanceView() {
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
-      <div>
+      <div className="flex justify-center">
         <Calendar
           mode="single"
           selected={date}
           onSelect={setDate}
           className="rounded-md border"
+          locale={ru}
         />
       </div>
       <div className="rounded-lg border bg-card">
