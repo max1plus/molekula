@@ -47,8 +47,8 @@ export function AttendanceView() {
   // we show a skeleton. This completely avoids the hydration error.
   if (!hasMounted) {
     return (
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="flex justify-center overflow-x-auto">
+      <div className="grid gap-6">
+        <div className="flex justify-center">
           <div className="p-3 rounded-md border w-min">
             <Skeleton className="h-[290px] w-[320px]" />
           </div>
@@ -81,12 +81,12 @@ export function AttendanceView() {
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="flex justify-center overflow-x-auto">
+    <div className="grid gap-6">
+      <div className="flex justify-center">
         <Calendar
           mode="single"
           selected={date}
-          // The calendar is now static and not selectable.
+          onSelect={(d) => setDate(d || new Date())}
           className="rounded-md border"
           locale={ru}
         />
