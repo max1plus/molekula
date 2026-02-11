@@ -3,17 +3,6 @@ import Image from 'next/image';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarInset,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
 import Link from 'next/link';
 import { QrCode, Users } from 'lucide-react';
 
@@ -42,9 +31,46 @@ export default function RootLayout({
         />
       </head>
       <body className={cn('font-body antialiased min-h-screen bg-background')}>
-        <SidebarProvider>
-          <Sidebar>
-            <SidebarHeader>
+        <div className="grid min-h-screen w-full md:grid-cols-[240px_1fr]">
+          {/* Desktop Sidebar */}
+          <div className="hidden border-r bg-muted/20 md:block">
+            <div className="flex h-full max-h-screen flex-col gap-4">
+              <header className="flex h-16 items-center border-b px-6">
+                <Link href="/" className="flex items-center gap-2">
+                  <Image
+                    src="/logo.png"
+                    width={40}
+                    height={40}
+                    alt="Молекула бар"
+                    className="rounded-lg"
+                  />
+                  <h1 className="font-headline text-xl font-bold text-primary">
+                    Молекула бар
+                  </h1>
+                </Link>
+              </header>
+              <nav className="grid items-start px-4 text-sm font-medium">
+                <Link
+                  href="/"
+                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:bg-muted hover:text-primary"
+                >
+                  <Users className="h-5 w-5" />
+                  <span>Гости</span>
+                </Link>
+                <Link
+                  href="/scanner"
+                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:bg-muted hover:text-primary"
+                >
+                  <QrCode className="h-5 w-5" />
+                  <span>Сканер</span>
+                </Link>
+              </nav>
+            </div>
+          </div>
+
+          {/* Mobile Layout */}
+          <div className="flex flex-col">
+            <header className="sticky top-0 z-10 flex h-16 items-center justify-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm md:hidden">
               <div className="flex items-center gap-2">
                 <Image
                   src="/logo.png"
@@ -57,38 +83,28 @@ export default function RootLayout({
                   Молекула бар
                 </h1>
               </div>
-            </SidebarHeader>
-            <SidebarContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/">
-                      <Users />
-                      <span>Гости</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/scanner">
-                      <QrCode />
-                      <span>Сканер</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarContent>
-          </Sidebar>
-          <SidebarInset>
-            <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
-              <SidebarTrigger className="md:hidden" />
-              <h2 className="font-headline text-xl font-semibold text-foreground">
-                Молекула бар Access
-              </h2>
             </header>
-            <main className="flex-1 p-4 sm:p-6">{children}</main>
-          </SidebarInset>
-        </SidebarProvider>
+            <main className="flex-1 p-4 pb-24 sm:p-6 md:pb-6">{children}</main>
+            <nav className="fixed bottom-0 left-0 right-0 z-20 border-t bg-background/95 backdrop-blur-sm md:hidden">
+              <div className="grid h-16 grid-cols-2">
+                <Link
+                  href="/"
+                  className="flex flex-col items-center justify-center gap-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-primary"
+                >
+                  <Users />
+                  <span>Гости</span>
+                </Link>
+                <Link
+                  href="/scanner"
+                  className="flex flex-col items-center justify-center gap-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-primary"
+                >
+                  <QrCode />
+                  <span>Сканер</span>
+                </Link>
+              </div>
+            </nav>
+          </div>
+        </div>
         <Toaster />
       </body>
     </html>
