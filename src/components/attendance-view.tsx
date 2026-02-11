@@ -20,11 +20,17 @@ export function AttendanceView() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
-    // Устанавливаем дату только на клиенте, чтобы избежать ошибки гидратации
-    setDate(new Date());
+    setHasMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (hasMounted) {
+      setDate(new Date());
+    }
+  }, [hasMounted]);
 
   useEffect(() => {
     if (date) {
@@ -38,14 +44,20 @@ export function AttendanceView() {
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="flex justify-center overflow-x-auto">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={setDate}
-          className="rounded-md border"
-          locale={ru}
-          initialFocus
-        />
+        {hasMounted ? (
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={setDate}
+            className="rounded-md border"
+            locale={ru}
+            initialFocus
+          />
+        ) : (
+          <div className="p-3 rounded-md border">
+            <Skeleton className="h-[290px] w-[320px]" />
+          </div>
+        )}
       </div>
       <div className="rounded-lg border bg-card">
         <ScrollArea className="h-[calc(100vh-22rem)]">
