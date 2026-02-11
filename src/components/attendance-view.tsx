@@ -17,9 +17,14 @@ import { Skeleton } from './ui/skeleton';
 import { ru } from 'date-fns/locale';
 
 export function AttendanceView() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    // Устанавливаем дату только на клиенте, чтобы избежать ошибки гидратации
+    setDate(new Date());
+  }, []);
 
   useEffect(() => {
     if (date) {
@@ -39,6 +44,7 @@ export function AttendanceView() {
           onSelect={setDate}
           className="rounded-md border"
           locale={ru}
+          initialFocus
         />
       </div>
       <div className="rounded-lg border bg-card">
@@ -73,7 +79,7 @@ export function AttendanceView() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={2} className="h-24 text-center">
-                    Нет данных за выбранный день.
+                    {!date ? "Загрузка..." : "Нет данных за выбранный день."}
                   </TableCell>
                 </TableRow>
               )}
