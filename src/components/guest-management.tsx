@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -21,14 +20,8 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Search, User, Edit } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { GuestForm } from './guest-form';
+import { Search, User } from 'lucide-react';
+import { GuestDetails } from './guest-details';
 import { ScrollArea } from './ui/scroll-area';
 
 type GuestManagementProps = {
@@ -36,34 +29,41 @@ type GuestManagementProps = {
 };
 
 export function GuestManagement({ initialGuests }: GuestManagementProps) {
-  const [guests, setGuests] = useState<Guest[]>(initialGuests);
+  const [guests] = useState<Guest[]>(initialGuests);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingGuest, setEditingGuest] = useState<Guest | null>(null);
+  const [viewingGuest, setViewingGuest] = useState<Guest | null>(null);
 
   const filteredGuests = useMemo(() => {
-    return guests
-      .filter((guest) =>
-        guest.full_name.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-      .filter((guest) => {
+    const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
+    
+    const filterByCategory = (guest: Guest) => {
         if (filter === 'all') return true;
         if (filter === 'blacklisted') return guest.is_blacklisted;
         if (filter === 'list') return guest.guest_category === 'list';
         if (filter === 'ticket_buyer') return guest.guest_category === 'ticket_buyer';
         return true;
-      });
+    }
+
+    if (!lowerCaseSearchTerm) {
+      return guests.filter(filterByCategory);
+    }
+
+    return guests
+      .filter(
+        (guest) =>
+          guest.full_name.toLowerCase().includes(lowerCaseSearchTerm) ||
+          guest.phone.replace(/\D/g, '').includes(lowerCaseSearchTerm.replace(/\D/g, ''))
+      )
+      .filter(filterByCategory);
   }, [guests, searchTerm, filter]);
 
-  const handleAddGuest = () => {
-    setEditingGuest(null);
-    setIsDialogOpen(true);
+  const handleViewGuest = (guest: Guest) => {
+    setViewingGuest(guest);
   };
 
-  const handleEditGuest = (guest: Guest) => {
-    setEditingGuest(guest);
-    setIsDialogOpen(true);
+  const handleCloseDialog = () => {
+    setViewingGuest(null);
   };
 
   return (
@@ -72,7 +72,7 @@ export function GuestManagement({ initialGuests }: GuestManagementProps) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           <Input
-            placeholder="Поиск по ФИО..."
+            placeholder="Поиск по ФИО или телефону..."
             className="pl-10"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -90,10 +90,6 @@ export function GuestManagement({ initialGuests }: GuestManagementProps) {
               <SelectItem value="blacklisted">Черный список</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleAddGuest} className="w-full md:w-auto">
-            <PlusCircle className="mr-2 h-5 w-5" />
-            Добавить гостя
-          </Button>
         </div>
       </div>
       <div className="rounded-lg border bg-card">
@@ -102,72 +98,71 @@ export function GuestManagement({ initialGuests }: GuestManagementProps) {
             <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>
                 <TableHead>Гость</TableHead>
-                <TableHead>Категория</TableHead>
+                <TableHead className="hidden sm:table-cell">Категория</TableHead>
                 <TableHead>Статус</TableHead>
-                <TableHead className="text-right">Действия</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredGuests.map((guest) => (
-                <TableRow key={guest.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-4">
-                      <Avatar>
-                        <AvatarImage src={guest.photo} alt={guest.full_name} data-ai-hint="person portrait" />
-                        <AvatarFallback>
-                          <User />
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{guest.full_name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {guest.phone}
+              {filteredGuests.length > 0 ? (
+                filteredGuests.map((guest) => (
+                  <TableRow
+                    key={guest.id}
+                    onClick={() => handleViewGuest(guest)}
+                    className="cursor-pointer"
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-4">
+                        <Avatar>
+                          <AvatarImage
+                            src={guest.photo}
+                            alt={guest.full_name}
+                            data-ai-hint="person portrait"
+                          />
+                          <AvatarFallback>
+                            <User />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{guest.full_name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {guest.phone}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">
-                      {guest.guest_category === 'list'
-                        ? 'По списку'
-                        : 'Купил билет'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {guest.is_blacklisted ? (
-                      <Badge variant="destructive">В черном списке</Badge>
-                    ) : (
-                      <Badge variant="outline">Чист</Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleEditGuest(guest)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <Badge variant="secondary">
+                        {guest.guest_category === 'list'
+                          ? 'По списку'
+                          : 'Купил билет'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {guest.is_blacklisted ? (
+                        <Badge variant="destructive">В черном списке</Badge>
+                      ) : (
+                        <Badge variant="outline">Чист</Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={3} className="h-24 text-center">
+                    Гости не найдены.
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </ScrollArea>
       </div>
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>
-              {editingGuest ? 'Редактировать гостя' : 'Добавить гостя'}
-            </DialogTitle>
-          </DialogHeader>
-          <GuestForm
-            guest={editingGuest}
-            onFinished={() => setIsDialogOpen(false)}
-          />
-        </DialogContent>
-      </Dialog>
+
+      <GuestDetails
+        guest={viewingGuest}
+        isOpen={!!viewingGuest}
+        onClose={handleCloseDialog}
+      />
     </div>
   );
 }
