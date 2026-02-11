@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { Calendar } from '@/components/ui/calendar';
+import dynamic from 'next/dynamic';
 import { getAttendanceLogs } from '@/lib/actions';
 import type { AttendanceLog } from '@/lib/types';
 import {
@@ -16,21 +16,27 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 import { ru } from 'date-fns/locale';
 
+const Calendar = dynamic(
+  () => import('@/components/ui/calendar').then((mod) => mod.Calendar),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="p-3 rounded-md border">
+        <Skeleton className="h-[290px] w-[320px]" />
+      </div>
+    ),
+  }
+);
+
 export function AttendanceView() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
-    setHasMounted(true);
+    // Set initial date only on the client to avoid hydration mismatch
+    setDate(new Date());
   }, []);
-
-  useEffect(() => {
-    if (hasMounted) {
-      setDate(new Date());
-    }
-  }, [hasMounted]);
 
   useEffect(() => {
     if (date) {
@@ -44,20 +50,14 @@ export function AttendanceView() {
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="flex justify-center overflow-x-auto">
-        {hasMounted ? (
-          <Calendar
-            mode="single"
-            selected={date}
-            onSelect={setDate}
-            className="rounded-md border"
-            locale={ru}
-            initialFocus
-          />
-        ) : (
-          <div className="p-3 rounded-md border">
-            <Skeleton className="h-[290px] w-[320px]" />
-          </div>
-        )}
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={setDate}
+          className="rounded-md border"
+          locale={ru}
+          initialFocus
+        />
       </div>
       <div className="rounded-lg border bg-card">
         <ScrollArea className="h-[calc(100vh-22rem)]">
@@ -72,10 +72,10 @@ export function AttendanceView() {
               {isPending ? (
                 <TableRow>
                   <TableCell colSpan={2}>
-                    <div className='space-y-2'>
-                      <Skeleton className='h-8 w-full' />
-                      <Skeleton className='h-8 w-full' />
-                      <Skeleton className='h-8 w-full' />
+                    <div className="space-y-2">
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
                     </div>
                   </TableCell>
                 </TableRow>
@@ -91,7 +91,7 @@ export function AttendanceView() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={2} className="h-24 text-center">
-                    {!date ? "Загрузка..." : "Нет данных за выбранный день."}
+                    {!date ? 'Загрузка...' : 'Нет данных за выбранный день.'}
                   </TableCell>
                 </TableRow>
               )}
