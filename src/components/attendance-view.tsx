@@ -44,7 +44,7 @@ export function AttendanceView() {
   if (!hasMounted) {
     return (
       <div className="grid gap-6">
-        <div className="mx-auto w-min">
+        <div className="mx-auto">
           <div className="rounded-md border">
             <Skeleton className="h-[290px] w-[320px] p-3" />
           </div>
@@ -78,7 +78,7 @@ export function AttendanceView() {
 
   return (
     <div className="grid gap-6">
-      <div className="mx-auto w-min">
+      <div className="mx-auto">
         <Calendar
           mode="single"
           selected={date}
