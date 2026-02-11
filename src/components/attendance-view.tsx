@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import dynamic from 'next/dynamic';
 import { getAttendanceLogs } from '@/lib/actions';
 import type { AttendanceLog } from '@/lib/types';
 import {
@@ -15,28 +14,25 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 import { ru } from 'date-fns/locale';
-
-const Calendar = dynamic(
-  () => import('@/components/ui/calendar').then((mod) => mod.Calendar),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="p-3 rounded-md border">
-        <Skeleton className="h-[290px] w-[320px]" />
-      </div>
-    ),
-  }
-);
+import { Calendar } from '@/components/ui/calendar';
 
 export function AttendanceView() {
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [isPending, startTransition] = useTransition();
+  const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
-    // Set initial date only on the client to avoid hydration mismatch
-    setDate(new Date());
+    // This runs only in the browser, after the component has mounted.
+    setHasMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (hasMounted) {
+      const today = new Date();
+      setDate(today);
+    }
+  }, [hasMounted]);
 
   useEffect(() => {
     if (date) {
@@ -47,16 +43,52 @@ export function AttendanceView() {
     }
   }, [date]);
 
+  // On the server, and on the very first render in the browser,
+  // we show a skeleton. This completely avoids the hydration error.
+  if (!hasMounted) {
+    return (
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="flex justify-center overflow-x-auto">
+          <div className="p-3 rounded-md border w-min">
+            <Skeleton className="h-[290px] w-[320px]" />
+          </div>
+        </div>
+        <div className="rounded-lg border bg-card">
+          <ScrollArea className="h-[calc(100vh-22rem)]">
+            <Table>
+              <TableHeader className="sticky top-0 bg-card z-10">
+                <TableRow>
+                  <TableHead>Гость</TableHead>
+                  <TableHead>Время прихода</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell colSpan={2}>
+                    <div className="space-y-2">
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                      <Skeleton className="h-8 w-full" />
+                    </div>
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-6 md:grid-cols-2">
       <div className="flex justify-center overflow-x-auto">
         <Calendar
           mode="single"
           selected={date}
-          onSelect={setDate}
+          // The calendar is now static and not selectable.
           className="rounded-md border"
           locale={ru}
-          initialFocus
         />
       </div>
       <div className="rounded-lg border bg-card">
@@ -82,7 +114,9 @@ export function AttendanceView() {
               ) : logs.length > 0 ? (
                 logs.map((log) => (
                   <TableRow key={log.id}>
-                    <TableCell className="font-medium">{log.guest_name}</TableCell>
+                    <TableCell className="font-medium">
+                      {log.guest_name}
+                    </TableCell>
                     <TableCell>
                       {new Date(log.check_in_time).toLocaleTimeString('ru-RU')}
                     </TableCell>
@@ -91,7 +125,7 @@ export function AttendanceView() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={2} className="h-24 text-center">
-                    {!date ? 'Загрузка...' : 'Нет данных за выбранный день.'}
+                    Нет данных за выбранный день.
                   </TableCell>
                 </TableRow>
               )}
