@@ -4,7 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { QrCode, Users } from 'lucide-react';
+import { QrCode, Users, CalendarDays } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Молекула бар',
@@ -64,6 +64,13 @@ export default function RootLayout({
                   <QrCode className="h-5 w-5" />
                   <span>Сканер</span>
                 </Link>
+                <Link
+                  href="/attendance"
+                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-muted-foreground transition-all hover:bg-muted hover:text-primary"
+                >
+                  <CalendarDays className="h-5 w-5" />
+                  <span>Посещаемость</span>
+                </Link>
               </nav>
             </div>
           </div>
@@ -86,7 +93,7 @@ export default function RootLayout({
             </header>
             <main className="flex-1 p-4 pb-24 sm:p-6 md:pb-6">{children}</main>
             <nav className="fixed bottom-0 left-0 right-0 z-20 border-t bg-background/95 backdrop-blur-sm md:hidden">
-              <div className="grid h-16 grid-cols-2">
+              <div className="grid h-16 grid-cols-3">
                 <Link
                   href="/"
                   className="flex flex-col items-center justify-center gap-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-primary"
@@ -100,6 +107,13 @@ export default function RootLayout({
                 >
                   <QrCode />
                   <span>Сканер</span>
+                </Link>
+                <Link
+                  href="/attendance"
+                  className="flex flex-col items-center justify-center gap-1 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-primary"
+                >
+                  <CalendarDays />
+                  <span>Календарь</span>
                 </Link>
               </div>
             </nav>

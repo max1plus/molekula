@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { Guest } from '@/lib/types';
+import type { Guest, AttendanceLog } from '@/lib/types';
 import {
   Table,
   TableBody,
@@ -20,19 +20,22 @@ import {
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Search, User } from 'lucide-react';
+import { Search, User, CheckCircle } from 'lucide-react';
 import { GuestDetails } from './guest-details';
 import { ScrollArea } from './ui/scroll-area';
 
 type GuestManagementProps = {
   initialGuests: Guest[];
+  todaysLogs: AttendanceLog[];
 };
 
-export function GuestManagement({ initialGuests }: GuestManagementProps) {
+export function GuestManagement({ initialGuests, todaysLogs }: GuestManagementProps) {
   const [guests] = useState<Guest[]>(initialGuests);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const [viewingGuest, setViewingGuest] = useState<Guest | null>(null);
+
+  const checkedInGuestIds = useMemo(() => new Set(todaysLogs.map(log => log.guest_id)), [todaysLogs]);
 
   const filteredGuests = useMemo(() => {
     const lowerCaseSearchTerm = searchTerm.toLowerCase().trim();
@@ -40,23 +43,31 @@ export function GuestManagement({ initialGuests }: GuestManagementProps) {
     const filterByCategory = (guest: Guest) => {
         if (filter === 'all') return true;
         if (filter === 'blacklisted') return guest.is_blacklisted;
-        if (filter === 'list') return guest.guest_category === 'list';
-        if (filter === 'ticket_buyer') return guest.guest_category === 'ticket_buyer';
+        if (filter === 'checked_in') return checkedInGuestIds.has(guest.id);
+        if (filter === 'not_checked_in') return !checkedInGuestIds.has(guest.id);
         return true;
     }
 
+    let sortedGuests = [...guests].sort((a, b) => {
+        const aChecked = checkedInGuestIds.has(a.id);
+        const bChecked = checkedInGuestIds.has(b.id);
+        if (aChecked && !bChecked) return 1;
+        if (!aChecked && bChecked) return -1;
+        return a.full_name.localeCompare(b.full_name);
+    });
+
     if (!lowerCaseSearchTerm) {
-      return guests.filter(filterByCategory);
+      return sortedGuests.filter(filterByCategory);
     }
 
-    return guests
+    return sortedGuests
       .filter(
         (guest) =>
           guest.full_name.toLowerCase().includes(lowerCaseSearchTerm) ||
           guest.phone.replace(/\D/g, '').includes(lowerCaseSearchTerm.replace(/\D/g, ''))
       )
       .filter(filterByCategory);
-  }, [guests, searchTerm, filter]);
+  }, [guests, searchTerm, filter, checkedInGuestIds]);
 
   const handleViewGuest = (guest: Guest) => {
     setViewingGuest(guest);
@@ -85,8 +96,8 @@ export function GuestManagement({ initialGuests }: GuestManagementProps) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Все</SelectItem>
-              <SelectItem value="list">Списки</SelectItem>
-              <SelectItem value="ticket_buyer">Билеты</SelectItem>
+              <SelectItem value="checked_in">Пришли</SelectItem>
+              <SelectItem value="not_checked_in">Не пришли</SelectItem>
               <SelectItem value="blacklisted">Черный список</SelectItem>
             </SelectContent>
           </Select>
@@ -98,7 +109,6 @@ export function GuestManagement({ initialGuests }: GuestManagementProps) {
             <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>
                 <TableHead>Гость</TableHead>
-                <TableHead className="hidden sm:table-cell">Категория</TableHead>
                 <TableHead>Статус</TableHead>
               </TableRow>
             </TableHeader>
@@ -130,18 +140,15 @@ export function GuestManagement({ initialGuests }: GuestManagementProps) {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant="secondary">
-                        {guest.guest_category === 'list'
-                          ? 'По списку'
-                          : 'Купил билет'}
-                      </Badge>
-                    </TableCell>
                     <TableCell>
                       {guest.is_blacklisted ? (
                         <Badge variant="destructive">В черном списке</Badge>
+                      ) : checkedInGuestIds.has(guest.id) ? (
+                        <Badge className="bg-green-600 hover:bg-green-500 text-white">
+                          <CheckCircle className="mr-1 h-3 w-3" /> Пришел
+                        </Badge>
                       ) : (
-                        <Badge variant="outline">Чист</Badge>
+                        <Badge variant="outline">Ожидается</Badge>
                       )}
                     </TableCell>
                   </TableRow>

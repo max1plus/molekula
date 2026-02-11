@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "Guest": {
+      "title": "Guest",
+      "description": "A guest of the bar.",
+      "type": "object",
+      "properties": {
+        "full_name": {
+          "type": "string"
+        },
+        "photo": {
+          "type": "string",
+          "format": "uri"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "is_blacklisted": {
+          "type": "boolean"
+        },
+        "guest_category": {
+          "type": "string",
+          "enum": [
+            "list"
+          ]
+        }
+      },
+      "required": [
+        "full_name",
+        "phone",
+        "is_blacklisted",
+        "guest_category"
+      ]
+    },
+    "AttendanceLog": {
+      "title": "Attendance Log",
+      "description": "A log of guest attendance.",
+      "type": "object",
+      "properties": {
+        "guest_id": {
+          "type": "string"
+        },
+        "guest_name": {
+          "type": "string"
+        },
+        "check_in_time": {
+          "type": "object",
+          "description": "Firestore Timestamp"
+        },
+        "admin_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "guest_id",
+        "guest_name",
+        "check_in_time"
+      ]
+    }
+  },
+  "auth": {
+    "providers": []
+  },
+  "firestore": {
+    "/guests/{guestId}": {
+      "schema": {
+        "$ref": "#/entities/Guest"
+      },
+      "description": "Stores individual guest profiles."
+    },
+    "/attendance_logs/{logId}": {
+      "schema": {
+        "$ref": "#/entities/AttendanceLog"
+      },
+      "description": "Stores records of when guests check in."
+    }
+  }
+}

@@ -3,65 +3,122 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import {
-  guests,
-  attendanceLogs,
-  addGuestToStore,
-  updateGuestInStore,
-  addLogToStore,
-} from './data';
-import type { Guest } from './types';
+  collection,
+  getDocs,
+  getDoc,
+  addDoc,
+  updateDoc,
+  doc,
+  query,
+  where,
+  Timestamp,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { db } from './firebase';
+import type { Guest, AttendanceLog } from './types';
 
 const GuestSchema = z.object({
   id: z.string().optional(),
   full_name: z.string().min(3, 'ФИО должно быть не менее 3 символов'),
   phone: z.string().min(5, 'Неверный формат телефона'),
   description: z.string().optional(),
-  is_blacklisted: z.boolean(),
-  guest_category: z.enum(['list', 'ticket_buyer']),
-  photo: z.string().url('Неверный URL фото').optional(),
+  is_blacklisted: z
+    .string()
+    .transform((val) => val === 'on')
+    .or(z.boolean()),
+  photo: z.string().url('Неверный URL фото').optional().or(z.literal('')),
 });
 
 export async function getGuests(): Promise<Guest[]> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  return guests;
+  const guestsCol = collection(db, 'guests');
+  const guestSnapshot = await getDocs(guestsCol);
+  const guestList = guestSnapshot.docs.map((doc) => ({
+    id: doc.id,
+    ...doc.data(),
+  })) as Guest[];
+  return guestList;
+}
+
+export async function getAttendanceLogs(date: Date): Promise<AttendanceLog[]> {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const logsCol = collection(db, 'attendance_logs');
+  const q = query(
+    logsCol,
+    where('check_in_time', '>=', Timestamp.fromDate(startOfDay)),
+    where('check_in_time', '<=', Timestamp.fromDate(endOfDay))
+  );
+
+  const logSnapshot = await getDocs(q);
+  const logList = logSnapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      check_in_time: data.check_in_time.toDate(), // Convert Timestamp to Date
+    } as AttendanceLog;
+  });
+
+  return logList;
 }
 
 export async function processScan(prevState: any, formData: FormData) {
   'use server';
   const guestId = formData.get('guestId') as string;
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const guest = guests.find((g) => g.id === guestId);
 
-  if (!guest) {
+  // Check working hours (18:00 - 06:00)
+  const now = new Date();
+  const currentHour = now.getHours();
+  if (currentHour >= 6 && currentHour < 18) {
+    return { success: false, error: 'Bar is closed', guest: null };
+  }
+
+  const guestRef = doc(db, 'guests', guestId);
+  const guestSnap = await getDoc(guestRef);
+
+  if (!guestSnap.exists()) {
     return { success: false, error: 'Guest not found', guest: null };
   }
+
+  const guest = { id: guestSnap.id, ...guestSnap.data() } as Guest;
 
   if (guest.is_blacklisted) {
     return { success: false, error: 'Guest is blacklisted', guest };
   }
 
-  // Check if already checked in today
+  // Check if already checked in today (since last 18:00)
   const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const alreadyCheckedIn = attendanceLogs.some(
-    (log) =>
-      log.guest_id === guestId &&
-      new Date(log.check_in_time).getTime() > today.getTime()
-  );
+  if (today.getHours() < 6) {
+    // If it's after midnight but before 6am, check from yesterday 18:00
+    today.setDate(today.getDate() - 1);
+  }
+  today.setHours(18, 0, 0, 0);
 
-  if (alreadyCheckedIn) {
+  const logsCol = collection(db, 'attendance_logs');
+  const q = query(
+    logsCol,
+    where('guest_id', '==', guestId),
+    where('check_in_time', '>=', Timestamp.fromDate(today))
+  );
+  const existingLog = await getDocs(q);
+
+  if (!existingLog.empty) {
     return { success: false, error: 'Guest already checked in today', guest };
   }
 
-  addLogToStore({
-    id: `log-${Date.now()}`,
+  await addDoc(collection(db, 'attendance_logs'), {
     guest_id: guest.id,
-    check_in_time: new Date(),
+    guest_name: guest.full_name,
+    check_in_time: serverTimestamp(),
     admin_id: 'admin-001', // Placeholder admin ID
   });
 
   revalidatePath('/scanner');
+  revalidatePath('/attendance');
+  revalidatePath('/');
   return { success: true, guest, error: null };
 }
 
@@ -77,28 +134,25 @@ export async function saveGuest(prevState: any, formData: FormData) {
       errors: validatedFields.error.flatten().fieldErrors,
     };
   }
-  
+
   const { id, ...data } = validatedFields.data;
+  const photoUrl = data.photo || `https://picsum.photos/seed/${Math.random()}/400/400`;
 
-  // Simulate file upload
-  await new Promise((resolve) => setTimeout(resolve, 500));
-  const photoUrl = data.photo || 'https://picsum.photos/seed/newguest/400/400';
+  const guestData = {
+    ...data,
+    photo: photoUrl,
+    guest_category: 'list' as const,
+  };
 
-  if (id) {
-    // Update existing guest
-    const existingGuest = guests.find((g) => g.id === id);
-    if (existingGuest) {
-      const updatedGuest = { ...existingGuest, ...data, photo: photoUrl };
-      updateGuestInStore(updatedGuest);
+  try {
+    if (id) {
+      const guestRef = doc(db, 'guests', id);
+      await updateDoc(guestRef, guestData);
+    } else {
+      await addDoc(collection(db, 'guests'), guestData);
     }
-  } else {
-    // Create new guest
-    const newGuest: Guest = {
-      id: `qr-guest-${Date.now()}`,
-      ...data,
-      photo: photoUrl,
-    };
-    addGuestToStore(newGuest);
+  } catch (error) {
+    return { message: 'Ошибка сохранения в базу данных.' };
   }
 
   revalidatePath('/');

@@ -2,8 +2,6 @@
 
 import { useEffect, useActionState } from 'react';
 import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { saveGuest } from '@/lib/actions';
 import type { Guest } from '@/lib/types';
 
@@ -19,16 +17,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { z } from 'zod';
 
 const GuestFormSchema = z.object({
   id: z.string().optional(),
@@ -36,9 +28,9 @@ const GuestFormSchema = z.object({
   phone: z.string().min(5, 'Неверный формат телефона'),
   description: z.string().optional(),
   is_blacklisted: z.boolean(),
-  guest_category: z.enum(['list', 'ticket_buyer']),
-  photo: z.string().optional(), // In a real app, this would be a file upload
+  photo: z.string().optional(),
 });
+
 
 type GuestFormProps = {
   guest: Guest | null;
@@ -49,15 +41,13 @@ export function GuestForm({ guest, onFinished }: GuestFormProps) {
   const [state, formAction] = useActionState(saveGuest, { message: '' });
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof GuestFormSchema>>({
-    resolver: zodResolver(GuestFormSchema),
+  const form = useForm({
     defaultValues: {
       id: guest?.id || '',
       full_name: guest?.full_name || '',
       phone: guest?.phone || '',
       description: guest?.description || '',
       is_blacklisted: guest?.is_blacklisted || false,
-      guest_category: guest?.guest_category || 'list',
       photo: guest?.photo || '',
     },
   });
@@ -112,27 +102,7 @@ export function GuestForm({ guest, onFinished }: GuestFormProps) {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="guest_category"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Категория</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите категорию" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="list">По списку</SelectItem>
-                  <SelectItem value="ticket_buyer">Купил билет</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <FormField
           control={form.control}
           name="description"
@@ -172,12 +142,13 @@ export function GuestForm({ guest, onFinished }: GuestFormProps) {
                 <FormLabel>Черный список</FormLabel>
                 <FormDescription>
                   Запретить гостю доступ в заведение.
-                </FormDescription>
+                </FormFormDescription>
               </div>
               <FormControl>
                 <Switch
                   checked={field.value}
                   onCheckedChange={field.onChange}
+                  name="is_blacklisted"
                 />
               </FormControl>
             </FormItem>

@@ -46,7 +46,7 @@ export function GuestDetails({ guest, isOpen, onClose }: GuestDetailsProps) {
           </div>
           <div className="flex gap-2">
             <Badge variant="secondary">
-              {guest.guest_category === 'list' ? 'По списку' : 'Купил билет'}
+              По списку
             </Badge>
             {guest.is_blacklisted ? (
               <Badge variant="destructive">

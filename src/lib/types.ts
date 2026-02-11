@@ -5,12 +5,13 @@ export type Guest = {
   phone: string;
   description: string;
   is_blacklisted: boolean;
-  guest_category: 'list' | 'ticket_buyer';
+  guest_category: 'list';
 };
 
 export type AttendanceLog = {
   id: string;
   guest_id: string;
-  check_in_time: Date;
+  guest_name: string;
+  check_in_time: any; // Using `any` for Firebase Timestamp
   admin_id: string;
 };

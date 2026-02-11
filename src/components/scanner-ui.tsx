@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BlacklistAlert } from './blacklist-alert';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, Loader2, User, XCircle, QrCode } from 'lucide-react';
+import { CheckCircle, Loader2, User, XCircle, QrCode, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from './ui/badge';
 
@@ -43,6 +43,19 @@ export function ScannerUI() {
   const { toast } = useToast();
   const [formKey, setFormKey] = useState(Date.now());
 
+  const getErrorMessage = (error: string | null) => {
+    switch (error) {
+      case 'Guest not found':
+        return 'Гость не найден.';
+      case 'Guest already checked in today':
+        return 'Гость уже прошел сегодня.';
+      case 'Bar is closed':
+        return 'Бар закрыт. Время работы с 18:00 до 06:00.';
+      default:
+        return 'Произошла неизвестная ошибка.';
+    }
+  }
+
   useEffect(() => {
     // Only run side-effects when an action has been completed.
     if (!state.error && !state.success) {
@@ -66,10 +79,7 @@ export function ScannerUI() {
         toast({
           variant: 'destructive',
           title: 'Ошибка',
-          description:
-            state.error === 'Guest not found'
-              ? 'Гость не найден.'
-              : 'Гость уже прошел сегодня.',
+          description: getErrorMessage(state.error),
         });
         setFormKey(Date.now());
       }
