@@ -14,11 +14,11 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { QrCode, Users, Shield } from 'lucide-react';
+import { QrCode, Users, FlaskConical } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Bar Buddy Access',
-  description: 'Система контроля доступа для бара',
+  title: 'Молекула бар',
+  description: 'Система контроля доступа для Молекула бара',
 };
 
 export default function RootLayout({
@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -45,9 +45,9 @@ export default function RootLayout({
           <Sidebar>
             <SidebarHeader>
               <div className="flex items-center gap-2">
-                <Shield className="text-primary size-8" />
+                <FlaskConical className="text-primary size-8" />
                 <h1 className="font-headline text-2xl font-bold text-primary">
-                  Bar Buddy
+                  Молекула бар
                 </h1>
               </div>
             </SidebarHeader>
@@ -76,7 +76,7 @@ export default function RootLayout({
             <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
               <SidebarTrigger className="md:hidden" />
               <h2 className="font-headline text-xl font-semibold text-foreground">
-                Bar Buddy Access
+                Молекула бар Access
               </h2>
             </header>
             <main className="flex-1 p-4 sm:p-6">{children}</main>
