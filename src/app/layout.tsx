@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
@@ -14,7 +15,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import Link from 'next/link';
-import { QrCode, Users, FlaskConical } from 'lucide-react';
+import { QrCode, Users } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'Молекула бар',
@@ -45,7 +46,13 @@ export default function RootLayout({
           <Sidebar>
             <SidebarHeader>
               <div className="flex items-center gap-2">
-                <FlaskConical className="text-primary size-8" />
+                <Image
+                  src="/logo.png"
+                  width={40}
+                  height={40}
+                  alt="Молекула бар"
+                  className="rounded-lg"
+                />
                 <h1 className="font-headline text-2xl font-bold text-primary">
                   Молекула бар
                 </h1>
