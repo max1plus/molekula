@@ -37,3 +37,4 @@ npm run dev
 ### Настройка Firebase
 
 Проект уже настроен для работы с Firebase. Файл конфигурации находится по пути `src/lib/firebase.ts`. Данные хранятся в Firestore, а правила безопасности — в файле `firestore.rules`.
+# molekula
