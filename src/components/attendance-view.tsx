@@ -13,22 +13,12 @@ import {
 } from '@/components/ui/table';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
-import { ru } from 'date-fns/locale';
-import { Calendar } from '@/components/ui/calendar';
+import { SimpleCalendar } from './simple-calendar';
 
 export function AttendanceView() {
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<Date | undefined>(new Date());
   const [logs, setLogs] = useState<AttendanceLog[]>([]);
   const [isPending, startTransition] = useTransition();
-  const [hasMounted, setHasMounted] = useState(false);
-
-  useEffect(() => {
-    // This runs only in the browser, after the component has mounted.
-    setHasMounted(true);
-    // Set initial date only on the client to avoid hydration mismatch
-    const today = new Date();
-    setDate(today);
-  }, []);
 
   useEffect(() => {
     if (date) {
@@ -39,56 +29,13 @@ export function AttendanceView() {
     }
   }, [date]);
 
-  // On the server, and on the very first render in the browser,
-  // we show a skeleton. This completely avoids the hydration error.
-  if (!hasMounted) {
-    return (
-      <div className="grid gap-6">
-        <div className="mx-auto">
-          <div className="rounded-md border">
-            <Skeleton className="h-[290px] w-[320px] p-3" />
-          </div>
-        </div>
-        <div className="rounded-lg border bg-card">
-          <ScrollArea className="h-[calc(100vh-22rem)]">
-            <Table>
-              <TableHeader className="sticky top-0 bg-card z-10">
-                <TableRow>
-                  <TableHead>Гость</TableHead>
-                  <TableHead>Время прихода</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell colSpan={2}>
-                    <div className="space-y-2">
-                      <Skeleton className="h-8 w-full" />
-                      <Skeleton className="h-8 w-full" />
-                      <Skeleton className="h-8 w-full" />
-                    </div>
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </ScrollArea>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="grid gap-6">
-      <div className="mx-auto">
-        <Calendar
-          mode="single"
-          selected={date}
-          onSelect={(d) => setDate(d || new Date())}
-          className="rounded-md border"
-          locale={ru}
-        />
+    <div className="flex flex-col items-center gap-6">
+      <div className="w-full max-w-xs sm:max-w-sm">
+        <SimpleCalendar onSelect={setDate} selectedDate={date} />
       </div>
-      <div className="rounded-lg border bg-card">
-        <ScrollArea className="h-[calc(100vh-22rem)]">
+      <div className="w-full rounded-lg border bg-card">
+        <ScrollArea className="h-[calc(100vh-32rem)]">
           <Table>
             <TableHeader className="sticky top-0 bg-card z-10">
               <TableRow>
@@ -100,7 +47,7 @@ export function AttendanceView() {
               {isPending ? (
                 <TableRow>
                   <TableCell colSpan={2}>
-                    <div className="space-y-2">
+                    <div className="space-y-2 p-4">
                       <Skeleton className="h-8 w-full" />
                       <Skeleton className="h-8 w-full" />
                       <Skeleton className="h-8 w-full" />

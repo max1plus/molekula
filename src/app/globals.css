@@ -86,3 +86,33 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .simple-calendar-container table {
+    @apply w-full table-fixed border-collapse;
+  }
+  .simple-calendar-container th, .simple-calendar-container td {
+    @apply p-2 text-center text-sm h-10;
+  }
+  .simple-calendar-container th {
+    @apply font-normal text-muted-foreground;
+  }
+  .simple-calendar-container td {
+    @apply rounded-md;
+  }
+  .simple-calendar-container td:not(:empty) {
+    @apply cursor-pointer;
+  }
+  .simple-calendar-container td:not(:empty):hover {
+    @apply bg-accent text-accent-foreground;
+  }
+  .simple-calendar-container .today {
+    @apply bg-muted text-accent-foreground font-bold;
+  }
+  .simple-calendar-container .selected {
+    @apply bg-primary text-primary-foreground;
+  }
+  .simple-calendar-container .selected:hover {
+    @apply bg-primary/90;
+  }
+}
